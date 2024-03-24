@@ -24,7 +24,7 @@ router.post('/signup', async (req, res) => {
     return res.json({ status: true, message: "record registered" })
 })
 
-router.post('/login', async (res, req) => {
+router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email })
     if (!user) {
@@ -37,7 +37,7 @@ router.post('/login', async (res, req) => {
     }
 
     const token = jwt.sign({ username: user.username }, process.env.KEY, { expiresIn: '1h' })
-    res.cookies('token', token, { httpOnly: true, maxAge: 360000 })
+    res.cookie('token', token, { httpOnly: true, maxAge: 360000 })
     return res.json({ status: true, message: 'login successfully' })
 })
 
@@ -48,19 +48,22 @@ router.post('/forgot-password', async (req, res) => {
         if (!user) {
             return res.json({ message: "user is not registered" })
         }
-        const token = jwt.sign({ id: user.id }, process.env.KEY, { expiresIn: '5m'})
+        const token = jwt.sign({ id: user.id }, process.env.KEY, { expiresIn: '5m' })
 
         var transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: 'reactdmytro@gmail.com',
                 pass: 'pslo ddvj gxwy ckmi'
+            },
+            tls: {
+                rejectUnauthorized: false
             }
         });
 
         var mailOptions = {
             from: 'reactdmytro@gmail.com',
-            to: email, 
+            to: email,
             subject: 'Reset Password',
             text: `http://localhost:5173/resetPassword/${token}`
         };
@@ -68,8 +71,9 @@ router.post('/forgot-password', async (req, res) => {
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 console.log(error);
+                return res.json({ message: "error sending email" });
             } else {
-                return res.json({status: true, message: "email sent"})
+                return res.json({ status: true, message: "email sent" })
             }
         });
     } catch (err) {
